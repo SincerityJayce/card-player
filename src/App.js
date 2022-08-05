@@ -2,27 +2,98 @@ import './output.css';
 import create from "zustand";
 import "./App.css"
 import { useSpring, animated } from 'react-spring'
-import { useFirebase } from './Firebase';
-import { useGoogleSheets } from './GoogleSheets';
-
-
+import * as FireBase from './Firebase';
+import { gSheetAsObj } from './GoogleSheets';
+import {immer} from "zustand/middleware/immer"
 
 import { useContextMenu, ContextMenu } from './ContextMenu';
 
+//FFDecks Database for dev
+const sheetLink = "https://docs.google.com/spreadsheets/d/1syRHsRchz0EcsdFk7ieXyHKK9oe4GeZv4riyr4eXjcg/edit?usp=sharing"
 
+const useGame = create(immer((set, get)=>{
+
+  const myPlayerId = "developer"
+  const gameId = myPlayerId
+  const otherPlayer = ()=>get()&&get().players.find(id=>id!=myPlayerId)
+
+  const cardId = function*(){var i = 1;while(true){yield i++}}
+
+  //listen for other players card info
+  setTimeout(()=>{
+    FireBase.listen(["Games", gameId, "cards"], fb=>set(s=>{s&&(s.cards[otherPlayer()]=fb[otherPlayer()])}))
+    FireBase.listen(["Games", gameId, "groups"], fb=>set(s=>{s&&(s.groups[otherPlayer()]=fb[otherPlayer()])}))
+  }, 200)
+
+  function myCards (setterFunc){
+    if(setterFunc){
+      set(s=>setterFunc(s.cards[myPlayerId]))
+      FireBase.push(["Games", gameId, "cards", myPlayerId], get().cards[myPlayerId])
+    }
+    return  get().cards[myPlayerId]
+  }
+  function myGroups(setterFunc){
+    if(setterFunc){
+      set(s=>setterFunc(s.groups[myPlayerId]))
+      FireBase.push(["Games", gameId, "groups", myPlayerId], get().groups[myPlayerId])
+    }
+    return get().groups[myPlayerId]
+  }
+  function initGroup(name, content, props){
+    function initGroup(){
+      const cards = initialiseCards(content||devCards())
+      myGroups(groups=>groups[name]={...props, cards})
+      return cards
+
+      function initialiseCards (cards, props){
+        let refinedCards = cards.map(c=>({...props, id:cardId.next()}))
+        const {GSheetLink, idField} = get().cardLibrary
+        gSheetAsObj(GSheetLink).then(cardLibrary=>{
+          myCards(mC=>refinedCards.forEach((card, index)=>{
+            mC[card.id]=cardLibrary.find(c=>c[idField]=cards[index])
+          }))
+        })
+        return refinedCards
+      }
+    }
+    return myGroups()[name].cards||initGroup()||[]
+  }
+  
+  return{
+    players:[myPlayerId],
+    spectators:[],
+    cardLibrary:{
+      defaultGSheetLink:sheetLink,
+      idField:"serial_number"
+    },
+    cards:{
+      [myPlayerId]:{},
+      [otherPlayer()]:{}
+    },
+    groups:{
+      [myPlayerId]:{},
+      [otherPlayer()]:{}
+    },
+
+    initGroup,
+
+  }
+}))
 
 const yugiohCardBack = "https://ms.yugipedia.com//thumb/e/e5/Back-EN.png/257px-Back-EN.png"
 const blackImage = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Black_colour.jpg/800px-Black_colour.jpg"
-const devCards = [
-  "https://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=394485&type=card",
-  "https://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=527503&type=card",
-  "https://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=574358&type=card",
-  "https://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=394507&type=card",
-  "https://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=394486&type=card",
-  "https://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=394487&type=card",
-  "https://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=394488&type=card",
-]
 
+function devCards(){
+  let dc = [
+    " 1-001",
+    " 1-002",
+    " 1-003",
+    " 1-004",
+    " 1-005",
+    " 1-006"
+  ] 
+  return [...dc]
+}
 function popCard(group, index=0){
   let newGroups = {...useCardGroups.getState()}
   let newList = [...newGroups[group]]
@@ -57,17 +128,7 @@ var lifted={
 export const groupsData ={
   
 }
-export const useCardGroups = create((set, get)=>{
-  return {
-  initGroupIfAbsent:(name,props)=>{
-    const content = props.content||[...devCards].map(card=>({src:card})).map(c=>{c.faceDown=props.faceDown;return c})
-    function initGroup(){
-      groupsData[name]=props
-      set({[name]:content})
-    }
-    return get()[name]||initGroup()||content
-  }
-}});
+
 
 const useCardDrag = create(set=>{
   window.addEventListener("mousemove", e => { 
@@ -129,7 +190,7 @@ function PickupBox({group, children, index=0}){
 
 
 function Hand({name, content}){
-  const cards = useCardGroups(groups=>groups.initGroupIfAbsent(name, {content, faceDown:false, type:"hand"}))
+  const cards = useGame(s=>s.initGroup(name, content, {faceDown:false, type:"hand"}))
   const {set, dragging, hIndex} = useCardDrag(s=>s)
   const openMenuHere = useContextMenu(c=>c.openMenuHere)
 
@@ -153,7 +214,7 @@ function Hand({name, content}){
 
 
 function Pile({name, content, faceDown=false}){
-  const cards = useCardGroups(groups=>groups.initGroupIfAbsent(name, {content, faceDown, type:"pile"}))
+  const cards = useGame(s=>s.initGroup(name, content, {faceDown, type:"pile"}))
   const {set, dragging, hIndex} = useCardDrag(s=>s)
   const openMenuHere = useContextMenu(c=>c.openMenuHere)
 
