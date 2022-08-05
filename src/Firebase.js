@@ -24,18 +24,12 @@ const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
 //https://firebase.google.com/docs/database/web/read-and-write
-function db(...paths){
-  return ref(database, paths.join("/"))
+const db = (...paths)=>ref(database, paths.join("/"))
+
+export function push([paths], state){
+  set(db(...paths), state);
 }
-const gameId="dev"
-function pushGameState(state){
-  set(db("Games",gameId), state);
+export function listen([paths], callback){
+  onValue(db(...paths), data=>callback(data.val()))
 }
 
-export function useFirebase(...paths){
-  const [val, recieveVal] = useState({})
-  useEffect(() => {
-    onValue(db(...paths), data=>recieveVal(data.val()))
-  }, []);
-  return val
-}

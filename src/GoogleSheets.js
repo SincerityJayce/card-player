@@ -9,7 +9,7 @@ const spreadsheetUrl = "https://docs.google.com/spreadsheets/d/17ywW-5tsdsBBubNy
 
 console.log(gSheetAsObj(spreadsheetUrl))
 
-async function gSheetAsObj(url){
+export async function gSheetAsObj(url){
     const apiKey = "AIzaSyCqyhBLlOry0zA0U4SKM1AXehhvaFzVOuM" 
 
     const id = getSpreadsheetId(url)
