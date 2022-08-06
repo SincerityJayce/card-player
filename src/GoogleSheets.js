@@ -1,10 +1,3 @@
-import {useQuery} from '@tanstack/react-query';
-
-export function useGoogleSheets(url){
-    const data = useQuery((url)=>gSheetAsObj(url), url)
-    return data
-}
-
 export function normaliseObject(obj){
     var newObj = {}
     if(typeof obj == "object"){
