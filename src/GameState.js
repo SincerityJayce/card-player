@@ -57,7 +57,7 @@ export const useGame = create(immer((set, get) => {
   
   function initGroup() {
    props.controlledByOpponent ? initOpponentsGroup() : initOwnGroup()
-   function initOpponentGroup() {
+   function initOpponentsGroup() {
 
    }
    function initOwnGroup() {
