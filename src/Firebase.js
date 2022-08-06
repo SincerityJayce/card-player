@@ -1,6 +1,3 @@
-import { useState, useEffect } from "react";
-
-
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue, set } from "firebase/database";
@@ -26,10 +23,10 @@ const database = getDatabase(app);
 //https://firebase.google.com/docs/database/web/read-and-write
 const db = (...paths)=>ref(database, paths.join("/"))
 
-export function push([paths], state){
+export function push(paths, state){
   set(db(...paths), state);
 }
-export function listen([paths], callback){
+export function listen(paths, callback){
   onValue(db(...paths), data=>callback(data.val()))
 }
 

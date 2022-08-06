@@ -1,5 +1,6 @@
 import create from "zustand";
-import { useCardGroups, groupsData } from "./App";
+import { myGroups } from "./GameState";
+
 
 export const useContextMenu = create((set,get)=>{
     const closeMenu = ()=>set({contextTarget:false, index:false})
@@ -22,7 +23,7 @@ export function ContextMenu(){
     const {contextTarget, index, mouse, closeMenu} = useContextMenu()
   
     const options = {
-      Shuffle: (group)=>useCardGroups.setState({[group]:[...shuffle(useCardGroups.getState()[group])]})
+      Shuffle: (group)=>myGroups(g=>shuffle(g[group].cards)),
     }
   
     const menu = {
@@ -38,7 +39,7 @@ export function ContextMenu(){
     }
     return(
       <div id="ContextMenuPlaceholder" className="bg-gray-800 border-y-2 absolute rounded" style={mouse}>
-        {(contextTarget&&menu[contextTarget]||[]).concat(menu.default||[]).concat(menu[groupsData[contextTarget]?.type]||[] ).map((label, index)=>{
+        {(contextTarget&&menu[contextTarget]||[]).concat(menu.default||[]).concat(menu[myGroups()[contextTarget]?.type]||[] ).map((label, index)=>{
           return <Option key={index} label={label}/>
         })}
       </div>

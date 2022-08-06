@@ -5,9 +5,23 @@ export function useGoogleSheets(url){
     return data
 }
 
-const spreadsheetUrl = "https://docs.google.com/spreadsheets/d/17ywW-5tsdsBBubNyDXoKR_18q47wd0mjTHNAODhDfSQ/edit?usp=sharing"
-
-console.log(gSheetAsObj(spreadsheetUrl))
+export function normaliseObject(obj){
+    var newObj = {}
+    if(typeof obj == "object"){
+        Object.entries(obj).forEach(([key,val])=>{
+            val=normaliseObject(val)
+            const [newKey, ...children] = key.split("/")
+            if(children.length){
+                const childKey = children.join("/")
+                newObj[newKey] = {...newObj[newKey]||{}, [childKey]:val}
+            } else {
+                newObj[key] = (typeof val == 'object')?{...newObj[key], ...val}:val
+            }
+        })
+        return newObj
+    } 
+    return obj
+}
 
 export async function gSheetAsObj(url){
     const apiKey = "AIzaSyCqyhBLlOry0zA0U4SKM1AXehhvaFzVOuM" 
