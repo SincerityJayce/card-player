@@ -561,6 +561,18 @@ video {
   position: relative;
 }
 
+.top-0 {
+  top: 0px;
+}
+
+.top-2 {
+  top: 0.5rem;
+}
+
+.right-2 {
+  right: 0.5rem;
+}
+
 .mx-2 {
   margin-left: 0.5rem;
   margin-right: 0.5rem;
@@ -575,28 +587,32 @@ video {
   display: flex;
 }
 
-.h-24 {
-  height: 6rem;
+.h-screen {
+  height: 100vh;
 }
 
 .h-full {
   height: 100%;
 }
 
-.max-h-full {
-  max-height: 100%;
+.h-24 {
+  height: 6rem;
 }
 
-.w-0 {
-  width: 0px;
+.w-1\/6 {
+  width: 16.666667%;
 }
 
 .w-full {
   width: 100%;
 }
 
-.w-screen {
-  width: 100vw;
+.w-0 {
+  width: 0px;
+}
+
+.w-1\/12 {
+  width: 8.333333%;
 }
 
 .max-w-fit {
@@ -605,12 +621,12 @@ video {
   max-width: fit-content;
 }
 
-.max-w-full {
-  max-width: 100%;
-}
-
 .flex-grow {
   flex-grow: 1;
+}
+
+.flex-grow-0 {
+  flex-grow: 0;
 }
 
 .rotate-180 {
@@ -622,6 +638,10 @@ video {
 .transform {
   -webkit-transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
           transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 
 .flex-row {
@@ -679,6 +699,16 @@ video {
   border-color: rgb(156 163 175 / var(--tw-border-opacity));
 }
 
+.bg-sky-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(14 165 233 / var(--tw-bg-opacity));
+}
+
+.bg-gray-800 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+}
+
 .bg-lime-400 {
   --tw-bg-opacity: 1;
   background-color: rgb(163 230 53 / var(--tw-bg-opacity));
@@ -689,9 +719,9 @@ video {
   background-color: rgb(71 85 105 / var(--tw-bg-opacity));
 }
 
-.bg-gray-800 {
+.bg-sky-900 {
   --tw-bg-opacity: 1;
-  background-color: rgb(31 41 55 / var(--tw-bg-opacity));
+  background-color: rgb(12 74 110 / var(--tw-bg-opacity));
 }
 
 .p-2 {
@@ -701,6 +731,14 @@ video {
 .px-1 {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.leading-9 {
+  line-height: 2.25rem;
 }
 
 .text-white {
@@ -725,6 +763,10 @@ video {
 
 .transition-smooth{
   transition: all 350ms linear !important;
+}
+
+.sidebar div {
+  cursor: pointer;
 }
 
 .hover\:scale-110:hover {

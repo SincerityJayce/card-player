@@ -46,10 +46,7 @@ export const useGame = create(immer((set, get) => {
 
 
  //listen for other players card info
- setTimeout(() => {
-  FireBase.listen(["Games", gameId, "cards"], fb => set(s => { s && fb && (s.cards[otherPlayer()] = fb[otherPlayer()]) }))
-  FireBase.listen(["Games", gameId, "groups"], fb => set(s => { s && fb && (s.groups[otherPlayer()] = fb[otherPlayer()]) }))
- }, 200)
+
 
  function initGroup(name, initialCards, props) {
   const cardsState = myGroups()[name]?.cards
@@ -108,8 +105,11 @@ export const useGame = create(immer((set, get) => {
  window.addEventListener("mouseup", () => dropLastCard())
 
  return {
-  players: [myPlayerId],
-  spectators: [],
+  users:{
+   players: [myPlayerId],
+   host,
+   spectators: [],
+  },
   cardLibrary: {
    GSheetLink: sheetLink,
    idField: "serial_number"
@@ -131,6 +131,17 @@ export const useGame = create(immer((set, get) => {
  }
 }))
 export const { liftCard, dropCard, myGroups } = useGame.getState()
+const set = useGame.setState
+
+
+if(myPlayerId == gameId){
+ FireBase.push(["Games", gameId, "users"], {})
+}
+
+
+FireBase.listen(["Games", gameId, "cards"], fb => set(s => { s && fb && (s.cards[otherPlayer()] = fb[otherPlayer()]) }))
+FireBase.listen(["Games", gameId, "groups"], fb => set(s => { s && fb && (s.groups[otherPlayer()] = fb[otherPlayer()]) }))
+FireBase.listen(["Games", gameId, "users"]), users=> set({users})
 
 
 const devCards = () => [

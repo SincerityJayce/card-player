@@ -16,3 +16,7 @@
 .transition-smooth{
   transition: all 350ms linear !important;
 }
+
+.sidebar div{
+ @apply cursor-pointer
+}
