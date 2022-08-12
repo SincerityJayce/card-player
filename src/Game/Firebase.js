@@ -2,7 +2,7 @@ import create from "zustand"
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, set } from "firebase/database";
+import { getDatabase, ref, onValue, set, get } from "firebase/database";
 import { GoogleAuthProvider, getAuth, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 
 // TODO: Add SDKs for Firebase products that you want to use
@@ -25,31 +25,34 @@ const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
 //https://firebase.google.com/docs/database/web/read-and-write
-const db = (...paths)=>ref(database, paths.join("/"))
+const db = (paths)=>ref(database, paths.join("/"))
 
 export function push(paths, state){
-  set(db(...paths), state);
+ set(db(paths), state);
 }
 export function listen(paths, callback){
-  onValue(db(...paths), data=>callback(data.val()))
+ onValue(db(paths), data=>callback(data.val()))
+}
+export function fetch(paths, callback){
+ get(db(paths), snapshot=>callback(snapshot))
 }
 
 
 
 //auth
 
-
 export const useAuth = create((set,get)=>{
  // https://firebase.google.com/docs/auth/web/google-signin
  const provider = new GoogleAuthProvider();
  const auth = getAuth(app);
 
- onAuthStateChanged(auth, user=>{console.log(user);set({user})})
- const login=()=>!get().user&&signInWithPopup(auth, provider)
+ onAuthStateChanged(auth, user=>{set({user})})
+const login=async()=>get().user||(await signInWithPopup(auth, provider)).user
  const logout=()=>signOut(auth)
  return{
   user:false,
   login,
+  logout,
   toggle:()=>get().user?logout():login()
 }})
 

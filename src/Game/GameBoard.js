@@ -1,5 +1,5 @@
 import { useSpring, animated } from 'react-spring'
-import { useGame, liftCard, dropCard } from "./GameState"
+import { useGame, liftCard, dropCard, myRole } from "./GameState"
 import { useContextMenu, ContextMenu } from './ContextMenu';
 
 function BoardHalf({ controlledByOpponent=false }) {
@@ -35,7 +35,7 @@ export function FullBoard(){
 const yugiohCardBack = "https://ms.yugipedia.com//thumb/e/e5/Back-EN.png/257px-Back-EN.png"
 const blackImage = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Black_colour.jpg/800px-Black_colour.jpg"
 
-function Card({ card, dragged = false, owner = "developer" }) {
+function Card({ card, dragged = false, owner="host"}) {
  const src = useGame(g => g.cards[owner][card?.id]?.src)
  const dragging = useGame(g => g.myDrag().dragging)
  const placeholder = !src
@@ -71,7 +71,6 @@ function HandPlacementBox({ group, children, index }) {
 
     <animated.div
       onMouseMove={e => { dragging && set({ hGroup: group, hIndex: index + left(e) }) }}
-
       style={{ transform }}>
       {children}
     </animated.div>
@@ -93,7 +92,7 @@ function PickupBox({ group, children, index = 0, disabled }) {
 
 
 function Hand(props) {
- const { name, initialCards, controlledByOpponent } = props
+ const { name, initialCards=[], controlledByOpponent } = props
  const cards = useGame(s => s.initGroup(name, initialCards, {...props, type:'pile'}))
  const { dragging, hIndex } = useGame(g => g.myDrag())
  const set = useGame(g => g.myDrag)
@@ -105,7 +104,7 @@ function Hand(props) {
    onMouseLeave={e => !controlledByOpponent&& dragging && set({ hGroup: false })}
    onMouseUp={e => { !controlledByOpponent&& leftclick(e) && dropCard(name, hIndex) }}
    onMouseEnter={e => !controlledByOpponent&& dragging && set({ gHover: name, gIndex: cards.length - 1 })}
-   className="flex flex-row-reverse items-center flex-grow bg-lime-400 justify-end px-1 h-full hand">
+   className="flex flex-row-reverse items-center flex-grow bg-lime-400 justify-end px-1 hand">
    {cards.map((card, index) => (
     <PickupBox group={name} index={index} key={index} disabled={controlledByOpponent}>
      <HandPlacementBox group={name} index={index} key={index}>
@@ -118,8 +117,8 @@ function Hand(props) {
 }
 
 
-function Pile({ name, initialCards, faceDown = false }) {
-  const cards = useGame(s => s.initGroup(name, initialCards, { faceDown, type: "pile" }))
+function Pile({ name, initialCards, faceDown = false, controlledByOpponent }) {
+  const cards = useGame(s => s.initGroup(name, initialCards, { faceDown, type: "pile", controlledByOpponent }))
   const dragging = useGame(g => g.myDrag().dragging)
   const set = useGame(g => g.myDrag)
   const openMenuHere = useContextMenu(c => c.openMenuHere)
@@ -127,12 +126,12 @@ function Pile({ name, initialCards, faceDown = false }) {
 
   return (
     <div
-      onContextMenu={openMenuHere(name)}
-      onMouseLeave={e => dragging && set({ hGroup: false })}
-      onMouseUp={e => { leftclick(e) && dropCard(name, 0) }}
-      onMouseEnter={e => dragging && set({ gHover: name, gIndex: 0 })}
-      className="place-items-center flex-grow bg-slate-600 flex">
-      <PickupBox group={name}>
+      onContextMenu={!controlledByOpponent ? openMenuHere(name):null}
+      onMouseLeave={e => !controlledByOpponent &&dragging && set({ hGroup: false })}
+      onMouseUp={e => { !controlledByOpponent && leftclick(e) && dropCard(name, 0) }}
+      onMouseEnter={e => !controlledByOpponent && dragging && set({ gHover: name, gIndex: 0 })}
+      className="place-items-center flex-grow-0 min-w-fit bg-slate-600 flex pile">
+      <PickupBox group={name} disabled={controlledByOpponent}>
         <Card card={{ ...cards.length ? cards.at(-1) : { src: false }, faceDown }}></Card>
       </PickupBox>
     </div>
