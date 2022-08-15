@@ -137,7 +137,6 @@ export const useGame = create(withLogs(immer((set, get) => {
  }
 })))
 export const { liftCard, dropCard, myGroups, loadDeck } = useGame.getState()
-const set = useGame.setState
 
 
 
@@ -146,15 +145,11 @@ window.addEventListener("mouseleave", () => dropCard())
 window.addEventListener("mouseup", () => dropCard())
 
 
-FireBase.push(["Games", gameId, "users", myRole], myPlayerId)
-
 setTimeout(() => loadDeck(devDeck), 300)
 
 
 // listen for other players card info
-FireBase.listen(["Games", gameId, "cards", opponentsRole], data => set(s => { s && data && (s.cards[opponentsRole] = data) }))
-FireBase.listen(["Games", gameId, "groups", opponentsRole], data => set(s => { s && data && console.log('groups update', data)||(s.groups[opponentsRole] = data) }))
-FireBase.listen(["Games", gameId, "users"], users=> set({users}))
+
 
 
 const devCards = () => [
