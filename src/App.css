@@ -2,12 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+:is(.mouseFollower,.field-placement-box) img{
+ margin:0 !important;
+}
+:is(.hand, .pile) :is(div){
+ height:100%; 
+ place-content: center;
+}
+.hand, .pile, .field{
+ box-shadow:inset 0px 0px 15px 5px #000000;
+}
+
+
 .hand :first-child {
  /* buffer the rightmost card so it doesn't overflow the hand */
  width: 85px;
  flex-grow: 0;
 }
-.hand {height:100%; min-height: 112px; }
+.hand {height:100%; }
 .hand .wider:hover {
  min-width: 103px;
 }

@@ -3,7 +3,6 @@ import "./App.css"
 import { FullBoard } from "./Game/GameBoard"
 import { useAuth } from "./Game/Firebase"
 
-import { JoinGameFromURL } from './Game/HostJoin';
 import {
  BrowserRouter as Router,
  Routes,
@@ -33,13 +32,13 @@ function SideBar() {
 
  return (
   <>
-   <div onClick={JoinGameFromURL} className={`w-full flex flex-row gap-2 flex-grow-0 overflow-hidden bg-sky-900 
-   align-center items-center leading-9 font-bold text-white sidebar`}>
+   <div className={`w-full flex flex-row gap-2 flex-grow-1 overflow-hidden bg-sky-900 
+   align-center items-center leading-9 font-bold text-white sidebar max-h-1/8`}>
     <Pfp/>
-     <Routes>
+     {/* <Routes>
       <Route path="game/:hostId" element={<div>Join</div>}></Route>
       <Route path="" element={<div>Host</div>}></Route>
-     </Routes>
+     </Routes> */}
     
    </div>
   </>

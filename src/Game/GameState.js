@@ -1,16 +1,12 @@
 import * as FireBase from './Firebase';
 import { gSheetAsObj, normaliseObject } from './GoogleSheets';
 import { immer } from "zustand/middleware/immer"
+import {OfficialGames} from "./CardGameApis"
 import create from "zustand";
+import { myRole, opponentsRole, hostId} from './HostJoin';
 
-//FFDecks Replica Database for dev
-const sheetLink = "https://docs.google.com/spreadsheets/d/1syRHsRchz0EcsdFk7ieXyHKK9oe4GeZv4riyr4eXjcg/edit?usp=sharing"
 const devDeck = "https://ffdecks.com/deck/6331280900751360"
 
-const myPlayerId = "developer"
-const gameId = myPlayerId
-export const myRole = "host"
-const opponentsRole = ["challenger", "host"].find(f => f != myRole)
 
 const withLogs = (config) => (set, get, api) =>
  config(
@@ -20,51 +16,58 @@ const withLogs = (config) => (set, get, api) =>
   },
   get,
   api
- )
+)
+
+const devCards = () => [
+ "1-001",
+ "1-002",
+ "1-003",
+ "1-004",
+ "1-005",
+ "1-006"
+]
 
 export const useGame = create(withLogs(immer((set, get) => {
 
- const cardId = function* () { var i = 1; while (true) { yield i++ } }()
+ const makeCardId = function*(){var i=1;while(true){yield i++}}();
 
- function makeShortcut(...paths) {
-  //returns a set+get equivalent to a given path, 
-  //which sets to both zustand state and firebaseRTDB
-  const path = (startinglocation) => {
+ function makeShortcut(...paths) { //!this is hot girl shit
+  //creates a set+get equivalent for a path, 
+  //set function applies changes to zustand state and pushes to firebase
+  const currentPaths = ()=>paths.map(p=>typeof p == "function"?p():p)
+  const path = (startinglocation) => {   
    var location = startinglocation
-   paths.forEach(p => location = location[p])
+   currentPaths().forEach(p => (location = location[p])) //🥵
    return location
   }
-  return (setterFunc) => {
-   setterFunc = objToAssignFunc(setterFunc)
-   if (setterFunc) {
-    set(s => { setterFunc(path(s)) })
-    let data = normaliseObject(path(get()))
-    FireBase.push(["Games", gameId, ...paths], data)
+  return function shortcut(changes) {
+   if (typeof changes == "object") { //changes can be a function or asignableValues
+    let newValues = changes
+    changes = (state) => Object.assign(state, newValues)
    }
-   return path(get())
-  }
-  function objToAssignFunc(setterFunc) {
-   if (typeof setterFunc == "object") {
-    const newValues = setterFunc
-    setterFunc = (d) => Object.assign(d, newValues)
+   if (changes) { //applies changes if any
+    set(s => { changes(path(s)) })
+    let data = (path(get()))
+    hostId&&FireBase.push(["Games", hostId, ...currentPaths()], data)
+     // console.log('hostId was unknown while trying to push data. Path:', currentPaths," Changes:", changes)
    }
-   return setterFunc
-  }
+   return path(get()) //always returns current state
+  } //sexiest function ive ever written
  }
- const myCards = makeShortcut("cards", myRole)
- const theirCards = makeShortcut("cards", opponentsRole)
- const myGroups = makeShortcut("groups", myRole)
- const theirGroups = makeShortcut("groups", opponentsRole)
- const myDrag = makeShortcut("groups", myRole, "lifted")
+ const myCards = makeShortcut("cards", ()=>myRole)
+ const theirCards = makeShortcut("cards", ()=>opponentsRole)
+ const myGroups = makeShortcut("groups", ()=>myRole)
+ const theirGroups = makeShortcut("groups", ()=>opponentsRole)
+ const myDrag = makeShortcut("groups", ()=>myRole, "lifted")
 
 
  function initialiseCards(cards, props) {
   let refinedCards = cards.map(c => {
-   return { ...props, id: cardId.next().value }
+   return { ...props, id: makeCardId.next().value }
   })
   const { GSheetLink, idField } = get().cardLibrary
-  gSheetAsObj(GSheetLink).then(cardLibrary => {
-   myCards(mC => refinedCards.forEach((card, index) => {
+  refinedCards.length&&gSheetAsObj(GSheetLink).then(cardLibrary => {
+    myCards(mC => refinedCards.forEach((card, index) => {
     mC[card.id] = normaliseObject(cardLibrary.find(c => c[idField] == cards[index]))
    }))
   })
@@ -72,29 +75,25 @@ export const useGame = create(withLogs(immer((set, get) => {
  }
 
  function initGroup(name, initialCards = devCards(), props) {
-  const cardsState = (props.controlledByOpponent ? theirGroups() : myGroups())?.[name]?.cards
-
-
+  let group = (props.controlledByOpponent ? theirGroups() : myGroups())?.[name]
+  const cardsState = group?.type&&group.cards
   return cardsState || (props.controlledByOpponent ? initOpponentsGroup() : initOwnGroup()) || []
 
-
-  function initOpponentsGroup() {
-
-  }
+  function initOpponentsGroup() {}
   function initOwnGroup() {
-   const cards = initialiseCards(initialCards || devCards())
+   const cards = group?.cards||initialiseCards(initialCards || [])
    myGroups(groups => groups[name] = { ...props, cards })
+   console.log('init group', name, myGroups())
    return cards
   }
  }
 
 
  return {
-  users: {
-
-  },
+  users: {},
   cardLibrary: {
-   GSheetLink: sheetLink,
+   //configured only for FF right now
+   GSheetLink: OfficialGames["Final Fantasy"].gSheet,
    idField: "serial_number"
   },
   cards: {
@@ -113,7 +112,7 @@ export const useGame = create(withLogs(immer((set, get) => {
    function popCard(group, index = 0) {
     let cards = [...myGroups()[group].cards]
     let card = cards.splice(index, 1)[0]
-    myGroups({ [group]: { cards } })
+    myGroups(g=>g[group].cards=cards)
     return card
    }
    get().dropCard();
@@ -128,50 +127,16 @@ export const useGame = create(withLogs(immer((set, get) => {
    myDrag({ hGroup: false, dragging: false, card: false });
   },
   loadDeck: async (decklink) => {
-   let deck = await FFDeck(decklink);
-   theirGroups(g => {
+   console.log('loading a deck')
+   let deck = await OfficialGames["Final Fantasy"].parseDeckLink(decklink);
+   myGroups(g => {
     g.deck=g.deck||{}
     g.deck.cards = initialiseCards(deck, g.deck?.props||{})
    })
   }
  }
 })))
+
 export const { liftCard, dropCard, myGroups, loadDeck } = useGame.getState()
-
-
-
-//this is implimented to make sure lifted cards are never deleted accidentally
 window.addEventListener("mouseleave", () => dropCard())
 window.addEventListener("mouseup", () => dropCard())
-
-
-setTimeout(() => loadDeck(devDeck), 300)
-
-
-// listen for other players card info
-
-
-
-const devCards = () => [
- "1-001",
- "1-002",
- "1-003",
- "1-004",
- "1-005",
- "1-006"
-]
-
-
-
-async function FFDeck(decklink) {
- var deckrequest = 'https://ffdecks.com/api/deck?deck_id=' + decklink.slice(-16)
- let { cards } = await fetch(deckrequest).then(r => r.json())
-
- var expandedDeck = cards.reduce((newDeck, { card, quantity }) => {
-  let i = 0; while (i < quantity) { newDeck.push(card); i++ }
-  return newDeck
- },
- []);
-
- return expandedDeck.map(c => c.serial_number)
-}
